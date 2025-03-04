@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mini Blog</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .ctn {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .blg {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4a4ae0;
+        }
+        .nv {
+            display: flex;
+            gap: 15px;
+        }
+        .nv a {
+            text-decoration: none;
+            color: #333;
+        }
+        .btn {
+            background-color: #4a4ae0;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .pst {
+            background-color: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .pst-tit {
+            margin-top: 0;
+            color: #333;
+        }
+        .pst-fm {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            min-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="ctn">
+        <header>
+            <div class="blg">Mini Blog</div>
+            <div class="nv">
+                <a href="#" id="ml">My Blogs</a>
+                <a href="#" id="lg">Login</a>
+                <a href="#" id="sg">Sign Up</a>
+                <a href="#" id="lo" style="display:none">Logout</a>
+            </div>
+        </header>
+
+        <div id="ct">
+            <div id="lgf" style="display:none">
+                <h2>Login</h2>
+                <input type="text" id="lu" placeholder="Username">
+                <input type="password" id="lp" placeholder="Password">
+                <button class="btn" id="lb">Login</button>
+            </div>
+
+            <div id="sgf" style="display:none">
+                <h2>Sign Up</h2>
+                <input type="text" id="su" placeholder="Username">
+                <input type="password" id="sp" placeholder="Password">
+                <button class="btn" id="sb">Sign Up</button>
+            </div>
+
+            <div id="bp" style="display:none">
+                <div style="display:flex; justify-content:space-between; align-items:center">
+                    <h2>Your Blog Posts</h2>
+                    <button class="btn" id="nb">Add New Post</button>
+                </div>
+                <div id="pl"></div>
+            </div>
+
+            <div id="pf" style="display:none" class="pst-fm">
+                <h2>New Post</h2>
+                <input type="text" id="pt" placeholder="Title">
+                <textarea id="pc" placeholder="Description"></textarea>
+                <button class="btn" id="sbp">Post</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class U {
+            constructor(username, password) {
+                this.username = username;
+                this.password = password;
+            }
+        }
+
+        class P {
+            constructor(title, content, author) {
+                this.title = title;
+                this.content = content;
+                this.author = author;
+                this.date = new Date();
+            }
+        }
+
+        class B {
+            constructor() {
+                this.users = JSON.parse(localStorage.getItem('users')) || [];
+                this.posts = JSON.parse(localStorage.getItem('posts')) || [];
+                this.currentUser = null;
+            }
+
+            registerUser(username, password) {
+                const userExists = this.users.some(user => user.username === username);
+                if (userExists) {
+                    alert('Username already exists');
+                    return false;
+                }
+                
+                const newUser = new U(username, password);
+                this.users.push(newUser);
+                localStorage.setItem('users', JSON.stringify(this.users));
+                return true;
+            }
+
+            login(username, password) {
+                const user = this.users.find(user => 
+                    user.username === username && user.password === password
+                );
+                
+                if (user) {
+                    this.currentUser = username;
+                    return true;
+                }
+                return false;
+            }
+
+            logout() {
+                this.currentUser = null;
+            }
+
+            addPost(title, content) {
+                if (!this.currentUser) return;
+                
+                const newPost = new P(title, content, this.currentUser);
+                this.posts.push(newPost);
+                localStorage.setItem('posts', JSON.stringify(this.posts));
+            }
+
+            getUserPosts() {
+                if (!this.currentUser) return [];
+                return this.posts.filter(post => post.author === this.currentUser);
+            }
+        }
+
+        const blog = new B();
+        
+        document.getElementById('ml').addEventListener('click', function() {
+            if (!blog.currentUser) {
+                showLogin();
+                return;
+            }
+            showBlogPosts();
+        });
+
+        document.getElementById('lg').addEventListener('click', function() {
+            showLogin();
+        });
+
+        document.getElementById('sg').addEventListener('click', function() {
+            showSignup();
+        });
+
+        document.getElementById('lo').addEventListener('click', function() {
+            blog.logout();
+            updateNavigation();
+            showLogin();
+        });
+
+        document.getElementById('lb').addEventListener('click', function() {
+            const username = document.getElementById('lu').value;
+            const password = document.getElementById('lp').value;
+            
+            if (blog.login(username, password)) {
+                updateNavigation();
+                showBlogPosts();
+            } else {
+                alert('Invalid username or password');
+            }
+        });
+
+        document.getElementById('sb').addEventListener('click', function() {
+            const username = document.getElementById('su').value;
+            const password = document.getElementById('sp').value;
+            
+            if (blog.registerUser(username, password)) {
+                alert('Account created successfully');
+                showLogin();
+            }
+        });
+
+        document.getElementById('nb').addEventListener('click', function() {
+            hideAllSections();
+            document.getElementById('pf').style.display = 'block';
+        });
+
+        document.getElementById('sbp').addEventListener('click', function() {
+            const title = document.getElementById('pt').value;
+            const content = document.getElementById('pc').value;
+            
+            if (!title || !content) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            blog.addPost(title, content);
+            document.getElementById('pt').value = '';
+            document.getElementById('pc').value = '';
+            showBlogPosts();
+        });
+
+        function hideAllSections() {
+            document.getElementById('lgf').style.display = 'none';
+            document.getElementById('sgf').style.display = 'none';
+            document.getElementById('bp').style.display = 'none';
+            document.getElementById('pf').style.display = 'none';
+        }
+
+        function showLogin() {
+            hideAllSections();
+            document.getElementById('lgf').style.display = 'block';
+        }
+
+        function showSignup() {
+            hideAllSections();
+            document.getElementById('sgf').style.display = 'block';
+        }
+
+        function showBlogPosts() {
+            hideAllSections();
+            document.getElementById('bp').style.display = 'block';
+            
+            const posts = blog.getUserPosts();
+            const postsListElement = document.getElementById('pl');
+            postsListElement.innerHTML = '';
+            
+            if (posts.length === 0) {
+                postsListElement.innerHTML = '<p>No posts yet</p>';
+                return;
+            }
+            
+            posts.forEach(post => {
+                const postElement = document.createElement('div');
+                postElement.className = 'pst';
+                postElement.innerHTML = `
+                    <h3 class="pst-tit">${post.title}</h3>
+                    <p>${post.content}</p>
+                `;
+                postsListElement.appendChild(postElement);
+            });
+        }
+
+        function updateNavigation() {
+            if (blog.currentUser) {
+                document.getElementById('lg').style.display = 'none';
+                document.getElementById('sg').style.display = 'none';
+                document.getElementById('lo').style.display = 'inline';
+                document.getElementById('lo').textContent = `Logout (${blog.currentUser})`;
+            } else {
+                document.getElementById('lg').style.display = 'inline';
+                document.getElementById('sg').style.display = 'inline';
+                document.getElementById('lo').style.display = 'none';
+            }
+        }
+
+        showLogin();
+    </script>
+</body>
+</html>
